@@ -34,11 +34,13 @@ $account = Invoke-AzJson account show --output json
 if ($account.user.name -ne $ExpectedAccount -or $account.id -ne $SubscriptionId) {
     throw 'Azure account or subscription mismatch. Select the authorized account before configuring pipeline identity.'
 }
+Invoke-AzJson account get-access-token --resource-type arm --output json | Out-Null
 $repositoryName = "$Owner/$Repository"
 gh auth status
 if ($LASTEXITCODE -ne 0) { throw 'Sign in with gh and grant repository administration access first.' }
-$repoInfo = gh repo view $repositoryName --json nameWithOwner --jq .nameWithOwner
-if ($LASTEXITCODE -ne 0 -or $repoInfo -ne $repositoryName) { throw "Cannot administer $repositoryName." }
+$repoMetadataJson = gh api "repos/$repositoryName" --jq '{id:.id,owner_id:.owner.id}'
+if ($LASTEXITCODE -ne 0) { throw "Cannot read GitHub repository identity for $repositoryName." }
+$repoMetadata = $repoMetadataJson | ConvertFrom-Json
 
 $groupId = "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup"
 $acr = Invoke-AzJson acr show --name $RegistryName --resource-group $ResourceGroup --subscription $SubscriptionId --output json
@@ -47,13 +49,12 @@ if (-not $pullIdentity.principalId) { throw 'The app image-pull identity has no 
 Invoke-AzJson group create --name $IdentityResourceGroup --location $Location --subscription $SubscriptionId --output json | Out-Null
 $deployer = Invoke-AzJson identity create --name ghcp-gha-deployer --resource-group $IdentityResourceGroup --location $Location --subscription $SubscriptionId --output json
 $federatedName = 'github-azure-demo'
-$subject = "repo:$repositoryName`:environment:azure-demo"
+$subject = "repo:$Owner@$($repoMetadata.owner_id)/$Repository@$($repoMetadata.id):environment:azure-demo"
 $credentials = Invoke-AzJson identity federated-credential list --identity-name ghcp-gha-deployer --resource-group $IdentityResourceGroup --subscription $SubscriptionId --output json
 $credential = $credentials | Where-Object { $_.name -eq $federatedName } | Select-Object -First 1
 if ($credential -and ($credential.issuer -ne 'https://token.actions.githubusercontent.com' -or $credential.subject -ne $subject -or $credential.audiences -notcontains 'api://AzureADTokenExchange')) {
-    throw "Federated credential '$federatedName' exists with a different trust subject. Review it before changing it."
-}
-if (-not $credential) {
+    Invoke-AzJson identity federated-credential update --name $federatedName --identity-name ghcp-gha-deployer --resource-group $IdentityResourceGroup --subscription $SubscriptionId --issuer 'https://token.actions.githubusercontent.com' --subject $subject --audiences api://AzureADTokenExchange --output json | Out-Null
+} elseif (-not $credential) {
     Invoke-AzJson identity federated-credential create --name $federatedName --identity-name ghcp-gha-deployer --resource-group $IdentityResourceGroup --subscription $SubscriptionId --issuer 'https://token.actions.githubusercontent.com' --subject $subject --audiences api://AzureADTokenExchange --output json | Out-Null
 }
 

@@ -8,7 +8,7 @@ const media = resolve('site/media');
 await mkdir(media, { recursive: true });
 const server = createGuideServer();
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: 'chromium' });
 try {
   const context = await browser.newContext({
     viewport: { width: 1366, height: 900 },

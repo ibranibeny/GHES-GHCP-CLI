@@ -1,0 +1,19 @@
+WEBVTT
+
+00:00.000 --> 00:04.000
+Guide recording: prerequisites, Docker, cloud Copilot licensing and Azure account.
+
+00:04.000 --> 00:08.000
+Step 2: clone the repository and start the Docker companion guide.
+
+00:08.000 --> 00:12.000
+Step 3: GHES Git access and cloud Copilot authentication are separate.
+
+00:12.000 --> 00:16.000
+Step 4: ask for a review of the synthetic pricing bug; do not edit or execute code.
+
+00:16.000 --> 00:20.000
+Step 5: verify that the corrected 10 percent discount gives 180, not 190.
+
+00:20.000 --> 00:24.500
+Step 6: deploy the companion on Azure and publish this guide on GitHub Pages.

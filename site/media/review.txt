@@ -1,0 +1,16 @@
+**Correctness bug:** `discountPercent` is subtracted as a flat amount, so `(100, 2, 10)` returns `190` instead of `180`. Apply the percentage to the subtotal.
+
+**Minimal fix:**
+```javascript
+function totalBeforeReview(price, quantity, discountPercent) {
+  return price * quantity * (1 - discountPercent / 100);
+}
+```
+
+**Regression test:**
+```javascript
+const assert = require('node:assert/strict');
+
+assert.equal(totalBeforeReview(100, 2, 10), 180);
+```
+This assertion fails for the original implementation and passes with the fix.

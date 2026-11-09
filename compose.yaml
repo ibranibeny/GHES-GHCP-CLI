@@ -1,0 +1,27 @@
+services:
+  guide:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+  review:
+    profiles: ["review"]
+    build:
+      context: .
+      dockerfile: Dockerfile.cli
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./demo:/workspace:ro
+    read_only: true
+    tmpfs:
+      - /home/node/.copilot:uid=1000,gid=1000,mode=0700
+      - /tmp:uid=1000,gid=1000
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

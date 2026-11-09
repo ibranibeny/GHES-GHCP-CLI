@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Step-by-step GHES architecture, Docker and GitHub Copilot CLI code review demo with Azure deployment guidance.">
+  <title>GHES + Copilot CLI | Demo field guide</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="guide.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to guide</a>
+  <header><a class="brand" href="#main">GHES <span>+ Copilot CLI</span></a><a href="https://github.com/ibranibeny/GHES-GHCP-CLI">View source</a></header>
+  <main id="main">
+    <section class="hero">
+      <p class="eyebrow">DEMO FIELD GUIDE / DOCKER / AZURE</p>
+      <h1>Your code. Your terminal.<br><span>A clearer review.</span></h1>
+      <p class="lead">An end-to-end learning path: understand the architecture, start Docker, review a small code defect with Copilot CLI, and publish the companion demo on Azure.</p>
+      <div class="actions"><a class="button" href="#walkthrough">Start the walkthrough</a><a class="secondary" href="#recording">Watch the guide</a></div>
+      <aside class="notice"><strong>Educational demo, not a GHES installation.</strong> GHES runs as a licensed VM appliance, not in Docker. This guide and its Azure container are a companion demonstration. The illustrated review below is not a native GHES pull request review or a live AI endpoint.</aside>
+      <div class="architecture"><div><small>YOUR GHES APPLIANCE</small><strong>Git repository</strong><span>Licensed VM + TLS</span></div><b aria-hidden="true">&rarr;</b><div><small>YOUR WORKSTATION</small><strong>Docker + Copilot CLI</strong><span>Local checkout + cloud login</span></div><b aria-hidden="true">&rarr;</b><div><small>AZURE + GITHUB PAGES</small><strong>Demo field guide</strong><span>Public guide, no credentials</span></div></div>
+    </section>
+    <section id="walkthrough">
+      <p class="eyebrow">THE HANDS-ON PATH</p><h2>Six steps, one repeatable demo.</h2>
+      <div class="guide-layout">
+        <nav class="steps" aria-label="Walkthrough steps">
+          <button data-step="0" aria-current="step">01 <span>Check prerequisites</span></button>
+          <button data-step="1">02 <span>Start with Docker</span></button>
+          <button data-step="2">03 <span>Connect and authenticate</span></button>
+          <button data-step="3">04 <span>Review the defect</span></button>
+          <button data-step="4">05 <span>Verify the fix</span></button>
+          <button data-step="5">06 <span>Deploy and publish</span></button>
+        </nav>
+        <article class="step-panel" aria-live="polite">
+          <p class="eyebrow" id="step-label"></p><h3 id="step-title"></h3><p id="step-description"></p>
+          <div class="terminal"><div class="terminal-bar"><span></span><span></span><span></span><b>COMMANDS TO RUN YOURSELF</b></div><pre><code id="step-command"></code></pre></div>
+          <p class="expected"><strong>Expected result:</strong> <span id="step-expected"></span></p>
+          <p class="caution" id="step-caution"></p>
+          <div class="step-controls"><button id="previous">Previous</button><span id="step-counter"></span><button id="next">Next</button></div>
+        </article>
+      </div>
+    </section>
+    <section id="review">
+      <p class="eyebrow">WHAT A REVIEW CAN LOOK LIKE</p><h2>A small bug. A meaningful finding.</h2>
+      <p>Authored illustration, not fabricated Copilot output. A percentage discount was incorrectly subtracted as a currency amount. A separate downloadable report, when available, contains an actual CLI response to this synthetic example.</p>
+      <div class="review-grid">
+        <div class="code-card"><h3>demo/pricing.mjs <small>BEFORE</small></h3><pre><code>function totalBeforeReview(price, quantity, discountPercent) {
+  return price * quantity - discountPercent;
+}
+
+// 100 x 2, 10% discount
+// Actual: 190 | Expected: 180</code></pre></div>
+        <aside class="finding"><p class="eyebrow">ILLUSTRATIVE REVIEW COMMENT</p><h3>Apply the discount to the subtotal</h3><p><code>discountPercent</code> is a percentage, not an absolute amount. Multiply the subtotal by <code>1 - discountPercent / 100</code>. Add a regression test expecting <strong>180</strong> for <code>(100, 2, 10)</code>.</p><span class="badge">Human approval before applying a fix</span></aside>
+      </div>
+      <details><summary>Show the corrected implementation</summary><pre><code>const subtotal = price * quantity;
+return Math.round(subtotal * (1 - discountPercent / 100) * 100) / 100;
+
+// Full implementation also validates inputs.
+// Regression: totalAfterReview(100, 2, 10) === 180</code></pre></details>
+      <p id="report-status">Actual CLI report: not included in this build.</p>
+    </section>
+    <section id="recording">
+      <p class="eyebrow">WATCH, THEN FOLLOW ALONG</p><h2>Step-by-step visual guidance.</h2>
+      <p>The silent, captioned video records this guide's six steps. Screenshots capture the actual guide, <strong>not Azure Portal, a GHES appliance, or a live CLI session</strong>. Use the commands and expected results to run the hands-on exercises yourself.</p>
+      <video controls preload="metadata" aria-label="Six-step guide screen recording">
+        <source src="media/walkthrough.webm" type="video/webm">
+        <track kind="captions" src="media/captions.vtt" srclang="en" label="English" default>
+        Your browser cannot play this recording. Use the transcript below.
+      </video>
+      <details><summary>Video transcript</summary><ol><li>Check Git, Docker, Node.js, Azure CLI, and a cloud Copilot license. GHES needs its own license.</li><li>Clone the repository and run Docker Compose. Open the local guide.</li><li>Authenticate separately to GHES for Git operations and to a cloud account for Copilot.</li><li>Ask Copilot CLI to review the synthetic pricing bug without editing or executing code.</li><li>Run the regression tests. The corrected 10 percent discount produces 180.</li><li>Run the Azure deployment script. GitHub Actions captures this guide and publishes GitHub Pages.</li></ol></details>
+      <div class="screenshots">
+        <figure><a href="media/step-1.png"><img loading="lazy" src="media/step-1.png" alt="Guide screenshot: prerequisites and account checks"></a><figcaption>01 / Prerequisites</figcaption></figure>
+        <figure><a href="media/step-2.png"><img loading="lazy" src="media/step-2.png" alt="Guide screenshot: Docker Compose startup commands"></a><figcaption>02 / Docker</figcaption></figure>
+        <figure><a href="media/step-3.png"><img loading="lazy" src="media/step-3.png" alt="Guide screenshot: separate GHES and Copilot authentication"></a><figcaption>03 / Authentication</figcaption></figure>
+        <figure><a href="media/step-4.png"><img loading="lazy" src="media/step-4.png" alt="Guide screenshot: Copilot CLI review prompt"></a><figcaption>04 / Code review</figcaption></figure>
+        <figure><a href="media/step-5.png"><img loading="lazy" src="media/step-5.png" alt="Guide screenshot: regression test commands"></a><figcaption>05 / Verify</figcaption></figure>
+        <figure><a href="media/step-6.png"><img loading="lazy" src="media/step-6.png" alt="Guide screenshot: Azure deployment and Pages publishing"></a><figcaption>06 / Publish</figcaption></figure>
+      </div>
+    </section>
+    <section id="ghes">
+      <p class="eyebrow">FOR A REAL ENTERPRISE SERVER</p><h2>GHES is a separate deployment.</h2>
+      <p>A real GHES Azure deployment requires a GitHub Enterprise license file, a supported x86-64 memory-optimized VM, persistent data storage, a hostname, TLS, and administrator setup. Current GitHub guidance recommends at least 4 vCPUs, 32 GB RAM, a 400 GB root disk and a 500 GB data disk for a trial/demo. Do not use the Docker guide as a substitute.</p>
+      <p>Copilot authentication and licensing use GitHub.com or GHE.com. A GHES Git token is not a Copilot credential. Source-code use with a cloud AI service must comply with your organization's policies and outbound connectivity requirements. Native GitHub pull request review availability is a separate product/platform consideration.</p>
+      <a href="https://docs.github.com/en/enterprise-server@latest/admin/installing-your-enterprise-server/setting-up-a-github-enterprise-server-instance/installing-github-enterprise-server-on-azure">Official GHES on Azure installation guide &rarr;</a>
+    </section>
+    <section id="troubleshooting">
+      <h2>Troubleshooting and teardown</h2>
+      <details><summary>Copilot login or review fails</summary><p>Confirm an active cloud Copilot entitlement and applicable CLI policies. Run <code>copilot login</code> on the host or start the review container interactively. Authentication is intentionally ephemeral in the container; never paste tokens into this public guide. Permission denials are errors, not successful reviews.</p></details>
+      <details><summary>Docker is unavailable on Windows</summary><p>Install Docker Desktop, enable the WSL 2 backend, select Linux containers and confirm <code>docker version</code> shows both client and server. The Azure script uses ACR cloud builds so local Docker is not required for Azure deployment.</p></details>
+      <details><summary>Azure role assignment or container startup fails</summary><p>The deployer needs resource creation and role assignment privileges. Confirm the selected account and subscription. Check <code>az containerapp logs show --name ghcp-guide --resource-group rg-ghes-ghcp-cli --type system</code>. ACR pull authorization can take time to propagate; rerun the idempotent deployment after it does. Never deploy in a different subscription to bypass a denial.</p></details>
+      <details><summary>Costs and cleanup</summary><p>Container Apps scales to zero; requests and compute may incur charges. ACR Basic has a standing charge even when idle. This is not a zero-cost or production deployment. Delete only the dedicated demo resource group after confirming it contains no other work: <code>az group delete --name rg-ghes-ghcp-cli --subscription YOUR_SUBSCRIPTION_ID</code>. Keep the confirmation prompt; deletion is irreversible.</p></details>
+    </section>
+  </main>
+  <footer><p>Independent educational demo. Not an official GitHub or Microsoft product.</p><a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/overview">Copilot CLI documentation</a><a href="https://docs.github.com/en/enterprise-server@latest/copilot/copilot-on-ghes/about-copilot-on-ghes">Copilot on GHES</a></footer>
+</body>
+</html>

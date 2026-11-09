@@ -1,0 +1,105 @@
+name: Deploy companion guide to Azure
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: azure-demo
+  cancel-in-progress: false
+jobs:
+  test:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run capture
+      - uses: actions/upload-artifact@v4
+        with:
+          name: azure-guide-visuals
+          path: |
+            site/media/*.png
+            site/media/*.webm
+          if-no-files-found: error
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment:
+      name: azure-demo
+      url: ${{ steps.deploy.outputs.app_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: azure-guide-visuals
+          path: site/media
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Confirm the federated Azure target
+        shell: bash
+        env:
+          EXPECTED_SUBSCRIPTION: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          actual="$(az account show --query id --output tsv)"
+          if [[ "$actual" != "$EXPECTED_SUBSCRIPTION" ]]; then
+            echo "::error::Azure login resolved an unexpected subscription."
+            exit 1
+          fi
+      - name: Build and push the guide to Azure Container Registry
+        shell: bash
+        env:
+          REGISTRY_NAME: ${{ vars.AZURE_ACR_NAME }}
+        run: |
+          az acr login --name "$REGISTRY_NAME"
+          docker build --file Dockerfile --tag "$REGISTRY_NAME.azurecr.io/ghcp-guide:$GITHUB_SHA" .
+          docker push "$REGISTRY_NAME.azurecr.io/ghcp-guide:$GITHUB_SHA"
+      - name: Update the Azure Container App and verify health
+        id: deploy
+        shell: bash
+        env:
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          CONTAINER_APP: ${{ vars.AZURE_CONTAINER_APP }}
+          REGISTRY_NAME: ${{ vars.AZURE_ACR_NAME }}
+          SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          az containerapp update \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --subscription "$SUBSCRIPTION_ID" \
+            --image "$REGISTRY_NAME.azurecr.io/ghcp-guide:$GITHUB_SHA" \
+            --output none
+          fqdn="$(az containerapp show \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --subscription "$SUBSCRIPTION_ID" \
+            --query properties.configuration.ingress.fqdn \
+            --output tsv)"
+          app_url="https://$fqdn"
+          for attempt in {1..18}; do
+            if response="$(curl --fail --silent --show-error --max-time 20 "$app_url/healthz" 2>/dev/null)" &&
+              [[ "$response" == *'"status":"ok"'* && "$response" == *'"mode":"educational-demo"'* ]]; then
+              echo "app_url=$app_url" >> "$GITHUB_OUTPUT"
+              echo "Verified $app_url/healthz"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Container App health check failed at $app_url."
+          az containerapp show --name "$CONTAINER_APP" --resource-group "$RESOURCE_GROUP" --subscription "$SUBSCRIPTION_ID" --query '{state:properties.provisioningState,revision:properties.latestRevisionName}' --output json || true
+          exit 1

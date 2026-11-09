@@ -34,19 +34,19 @@ With an authenticated host Copilot CLI, `npm run review` captures a real respons
 
 The capture script renders the actual guide, clicks all six steps, creates six PNG screenshots and a WebM recording, and checks mobile navigation. Visuals show the guide itself, not Azure Portal, a live CLI review, or a real GHES appliance. Generated visuals are not committed; Pages regenerates them on every push. The transcript and caption track are included.
 
-## Azure deployment
+## Automated Azure deployment
 
-The script builds in Azure Container Registry, so local Docker is not required. It validates the exact signed-in account and subscription before provisioning. It creates only a dedicated resource group, ACR Basic, a managed pull identity, a Container Apps environment, and a scale-to-zero app. ACR admin authentication is disabled. Role assignment privileges are required.
+See [.azure/pipeline-setup.md](.azure/pipeline-setup.md) for one-time passwordless OIDC setup and the guided release. The `Deploy companion guide to Azure` workflow runs manually on `main`; it tests and records the guide, pushes a versioned Docker image, updates Azure Container Apps, and checks `/healthz`. Azure login uses a user-assigned managed identity and GitHub OIDC, not saved passwords. The separate runtime image-pull identity has only `AcrPull`.
 
 ```powershell
 az login
 az account set --subscription YOUR_SUBSCRIPTION_ID
-.\scripts\deploy-azure.ps1 -SubscriptionId YOUR_SUBSCRIPTION_ID -ExpectedAccount YOUR_AZURE_LOGIN
+.\scripts\setup-azure-auth-for-pipeline.ps1 -SubscriptionId YOUR_SUBSCRIPTION_ID -ExpectedAccount YOUR_AZURE_LOGIN
 ```
 
-The script fails if provisioning or health verification fails. A verified URL is saved to the ignored `deployment.json`. ACR Basic has ongoing charges; Container Apps may incur request and compute charges. This is a public educational guide, not a production architecture. Use a unique dedicated resource group if the default already contains unrelated work.
+The setup script requires Azure role-assignment privileges and GitHub repository Actions/environment administration access. It creates the deployment identity in a separate resource group and restricts GitHub OIDC to the `main` branch's `azure-demo` environment. The Azure release uses the already-provisioned resources in the exact dedicated resource group. No saved Azure secret is required.
 
-Run `npm run capture` before deploying so the Azure image includes the screenshots and video. The script refuses to build without those generated assets.
+ACR Basic has ongoing charges; Container Apps may incur request and compute charges. The Azure workflow is manual to avoid deployments and costs on every code push. This is a public educational guide, not a production architecture.
 
 To remove the Azure demo, inspect the resource group first, then run `az group delete --name rg-ghes-ghcp-cli --subscription YOUR_SUBSCRIPTION_ID`. Keep the confirmation prompt. To stop local demo containers, run `docker compose down`.
 

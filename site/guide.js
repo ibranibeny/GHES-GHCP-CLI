@@ -37,9 +37,9 @@ const steps = [
   {
     title: 'Deploy Azure and publish GitHub Pages',
     description: 'The Azure script builds the Docker image in ACR and uses a managed identity to pull it into Container Apps. The Pages workflow separately generates fresh screenshots and a captioned guide recording on every push to main.',
-    command: '# PowerShell: select your authorized subscription first.\naz login\naz account set --subscription YOUR_SUBSCRIPTION_ID\n.\\scripts\\deploy-azure.ps1 -SubscriptionId YOUR_SUBSCRIPTION_ID -ExpectedAccount YOUR_AZURE_LOGIN\n# Watch the Pages workflow:\ngh run list --repo ibranibeny/GHES-GHCP-CLI\n# Pages: https://ibranibeny.github.io/GHES-GHCP-CLI/',
-    expected: 'Azure reports a healthy HTTPS guide URL; the Pages deployment publishes the guide, six screenshots, video, and captions.',
-    caution: 'ACR and Azure compute can incur costs. This publishes the companion guide only; real GHES licensing, appliance setup, and cloud Copilot authentication are not automated away.'
+    command: '# One-time owner setup for passwordless Actions OIDC:\n.\\scripts\\setup-azure-auth-for-pipeline.ps1 -SubscriptionId YOUR_SUBSCRIPTION_ID -ExpectedAccount YOUR_AZURE_LOGIN\n# From main, manually run the Actions workflow:\n# Deploy companion guide to Azure\n# Pages: https://ibranibeny.github.io/GHES-GHCP-CLI/',
+    expected: 'Azure Actions runs tests, captures screenshots/video, pushes an immutable Docker image and verifies the HTTPS deployment. Pages publishes the same guide.',
+    caution: 'The Azure release is manually dispatched on main to prevent unexpected costs. OIDC needs one-time Azure role setup. ACR and Azure compute can incur costs. Real GHES licensing, appliance setup, and Copilot authentication are not automated away.'
   }
 ];
 
